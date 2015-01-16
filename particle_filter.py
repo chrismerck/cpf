@@ -4,6 +4,12 @@
 
 import numpy as np
 import scipy
+from multiprocessing import Pool
+
+p = Pool(16)
+def fast_map(f, array):
+  #return p.map(f,array)
+  return map(f,array)
 
 class ParticleFilter(object):
   def __init__(self,particleGenerator,N,regenProb=0):
@@ -23,14 +29,12 @@ class ParticleFilter(object):
       p = self._particles[i]
       p.evolve(action)
   def _update(self,likelihood):
-    # compute particle likelihoods
-    q = np.zeros(self._N)
+    # regenerate new particles sometimes
     for i in range(self._N):
-      # regenerate new particles sometimes
       if (np.random.random() < self._regenProb):
         self._particles[i] = self._particleGenerator()
-      p = self._particles[i]
-      q[i] = likelihood(p)
+    # compute particle likelihoods
+    q = np.array(fast_map(likelihood, self._particles))
     # convert PMF->CMF
     q = np.cumsum(q)
     # normalize
